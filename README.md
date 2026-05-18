@@ -44,3 +44,33 @@ uv run flet run -r
 ```bash
 uv run flet run --web -r
 ```
+
+---
+
+# 🃏 Term Project: YGO Deck Lab
+
+YGOProDeck 공개 API 데이터를 DuckDB에 저장하고, Flet GUI에서 카드 검색/상세 조회/덱 빌더를 제공하는 데이터베이스 텀 프로젝트입니다.
+
+## 실행
+
+```bash
+uv sync
+uv run flet run -w -p 8550 main.py
+```
+
+실행 후 브라우저에서 `http://127.0.0.1:8550`으로 접속합니다.
+
+## 주요 파일
+
+- `main.py`: Flet GUI
+- `ygo_db.py`: DuckDB 초기화, API 시딩, 검색/상세/덱 저장 로직
+- `sql/schema.sql`: 테이블 생성 스키마
+- `sql/sample_queries.sql`: 설계서에 넣을 주요 JOIN 쿼리
+- `docs/ygo_erd_crowsfeet.html`: Crow's Foot ERD
+- `docs/design_notes.md`: 설계서 작성용 메모
+
+## 데이터
+
+- 최초 실행 시 `data/ygo_cards.duckdb` 생성
+- API 응답은 `data/ygo_cards_cache.json`에 캐시
+- 네트워크가 막힌 경우에도 최소 예비 데이터로 앱 실행 가능
