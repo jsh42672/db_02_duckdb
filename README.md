@@ -62,8 +62,13 @@ uv run flet run -w -p 8550 main.py
 
 ## 주요 파일
 
-- `main.py`: Flet GUI
-- `ygo_db.py`: DuckDB 초기화, API 시딩, 검색/상세/덱 저장 로직
+- `main.py`: Flet entry point 및 화면 조립
+- `app/bootstrap.py`: provider, repository, service 의존성 조립
+- `domain/`: 카드/덱/시드 DTO, 상수, 규칙
+- `provider/ygoprodeck/`: API 클라이언트, 캐시, fallback, 매핑
+- `repository/duckdb/`: DuckDB 조회/저장/시딩 구현
+- `service/`: 검색, 상세, 덱 검증/저장, 초기화 비즈니스 로직
+- `views/`: 검색/덱 빌더/저장된 덱 화면 구성
 - `sql/schema.sql`: 테이블 생성 스키마
 - `sql/sample_queries.sql`: 설계서에 넣을 주요 JOIN 쿼리
 - `docs/ygo_erd_crowsfeet.html`: Crow's Foot ERD
