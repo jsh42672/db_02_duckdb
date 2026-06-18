@@ -20,11 +20,11 @@ class DuckDbCardDetailRepository(BaseDuckDbRepository):
                 c.def,
                 c.description,
                 c.is_extra_deck,
-                p.cardmarket,
-                p.tcgplayer,
-                p.ebay,
-                p.amazon,
-                p.coolstuffinc,
+                MAX(CASE WHEN p.source_name = 'cardmarket' THEN p.price END) AS cardmarket,
+                MAX(CASE WHEN p.source_name = 'tcgplayer' THEN p.price END) AS tcgplayer,
+                MAX(CASE WHEN p.source_name = 'ebay' THEN p.price END) AS ebay,
+                MAX(CASE WHEN p.source_name = 'amazon' THEN p.price END) AS amazon,
+                MAX(CASE WHEN p.source_name = 'coolstuffinc' THEN p.price END) AS coolstuffinc,
                 img.image_url,
                 img.image_small,
                 img.image_cropped,
@@ -45,7 +45,6 @@ class DuckDbCardDetailRepository(BaseDuckDbRepository):
             GROUP BY
                 c.id, c.name, c.card_type, c.frame_type, c.attribute, c.race,
                 c.level, c.atk, c.def, c.description, c.is_extra_deck,
-                p.cardmarket, p.tcgplayer, p.ebay, p.amazon, p.coolstuffinc,
                 img.image_url, img.image_small, img.image_cropped
             """,
             [card_id],
@@ -55,10 +54,11 @@ class DuckDbCardDetailRepository(BaseDuckDbRepository):
 
         sets = self.con.execute(
             """
-            SELECT set_name, set_code, rarity, rarity_code, set_price
-            FROM card_set_entry
-            WHERE card_id = ?
-            ORDER BY set_name, set_code
+            SELECT e.set_name, e.set_code, e.rarity, r.code AS rarity_code, e.set_price
+            FROM card_set_entry e
+            LEFT JOIN rarity r ON r.name = e.rarity
+            WHERE e.card_id = ?
+            ORDER BY e.set_name, e.set_code
             LIMIT 20
             """,
             [card_id],

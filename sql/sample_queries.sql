@@ -26,8 +26,8 @@ SELECT
     c.atk,
     c.def,
     c.description,
-    p.cardmarket,
-    p.tcgplayer,
+    MAX(CASE WHEN p.source_name = 'cardmarket' THEN p.price END) AS cardmarket,
+    MAX(CASE WHEN p.source_name = 'tcgplayer' THEN p.price END) AS tcgplayer,
     img.image_url,
     tcg.status AS tcg_status,
     ocg.status AS ocg_status
@@ -43,7 +43,10 @@ LEFT JOIN (
 ) img ON img.card_id = c.id
 LEFT JOIN ban_status tcg ON tcg.card_id = c.id AND tcg.format = 'TCG'
 LEFT JOIN ban_status ocg ON ocg.card_id = c.id AND ocg.format = 'OCG'
-WHERE c.id = 89631139;
+WHERE c.id = 89631139
+GROUP BY
+    c.id, c.name, ct.name, r.name, a.name, c.level, c.atk, c.def,
+    c.description, img.image_url, tcg.status, ocg.status;
 
 -- 3. Deck detail query: deck, relationship table, card, type, ban status.
 SELECT

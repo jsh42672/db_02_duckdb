@@ -1,0 +1,43 @@
+---
+config:
+  theme: redux-color
+---
+sequenceDiagram
+    autonumber
+
+    actor User as 사용자
+    participant FE as Front-end<br/>(CardPoolView)
+    participant Ctrl as Controller<br/>(CardPoolController)
+    participant Svc as Service<br/>(CardPoolService)
+    participant Repo as Repository<br/>(CardPoolQueryRepository)
+    participant DB as DB:card<br/>/ card_set<br/>/ card_set_entry
+
+    User->>FE: 기준 연도 또는 세트명 입력
+    activate FE
+    FE->>Ctrl: get_card_pool(year, set_name)
+    activate Ctrl
+    Ctrl->>Svc: get_card_pool(year, set_name)
+    activate Svc
+
+    Svc->>Repo: find_cards_by_pool_condition(year, set_name)
+    activate Repo
+    Repo->>DB: 카드풀 조건 조회 SQL 실행
+    activate DB
+    DB-->>Repo: 카드풀 조회 결과
+    deactivate DB
+    Repo-->>Svc: 카드 목록 반환
+    deactivate Repo
+
+    alt [조회 결과 존재]
+        Svc-->>Ctrl: 카드풀 목록 반환
+        Ctrl-->>FE: 화면 데이터 전달
+        FE-->>User: 카드풀 목록 표시
+    else [조회 결과 없음]
+        Svc-->>Ctrl: 빈 결과 반환
+        Ctrl-->>FE: 안내 메시지 전달
+        FE-->>User: 조건에 맞는 카드 없음 표시
+    end
+
+    deactivate Svc
+    deactivate Ctrl
+    deactivate FE

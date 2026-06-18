@@ -34,7 +34,7 @@ def build_seed_cards() -> list[SeedCardDTO]:
             attribute="LIGHT",
             archetype="Test",
             is_extra_deck=False,
-            card_sets=[CardSetSeedDTO("Set A", "A-001", "Common", "(C)", 0.5)],
+            card_sets=[CardSetSeedDTO("Set A", 2020, "A-001", "Common", "(C)", 0.5)],
             card_prices=[CardPriceSeedDTO(0.5, 0.6, 0.7, 0.8, 0.9)],
             card_images=[CardImageSeedDTO(100, "image-100", "image-100-small", "image-100-cropped")],
             ban_statuses=[SeedBanStatusDTO("TCG", "Limited")],
@@ -103,6 +103,65 @@ class TestDuckDbRepository(unittest.TestCase):
         self.assertEqual([], detail.sets)
         self.assertEqual({}, detail.bans)
 
+    def test_schema_splits_repeating_codes_for_bcnf(self) -> None:
+        tables = {
+            row[0]
+            for row in self.connection.execute(
+                """
+                SELECT table_name
+                FROM information_schema.tables
+                WHERE table_schema = 'main'
+                """
+            ).fetchall()
+        }
+        self.assertTrue(
+            {
+                "price_source",
+                "rarity",
+                "ban_format",
+                "ban_status_type",
+                "deck_section",
+                "role_tag",
+                "deck_card_role",
+            }.issubset(tables)
+        )
+
+        card_price_columns = {
+            row[0]
+            for row in self.connection.execute(
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_name = 'card_price'
+                """
+            ).fetchall()
+        }
+        self.assertEqual({"card_id", "source_name", "price"}, card_price_columns)
+
+        set_entry_columns = {
+            row[0]
+            for row in self.connection.execute(
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_name = 'card_set_entry'
+                """
+            ).fetchall()
+        }
+        self.assertIn("rarity", set_entry_columns)
+        self.assertNotIn("rarity_code", set_entry_columns)
+        set_columns = {
+            row[0]
+            for row in self.connection.execute(
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_name = 'card_set'
+                """
+            ).fetchall()
+        }
+        self.assertIn("release_year", set_columns)
+
     def test_deck_roundtrip_save_list_detail_delete(self) -> None:
         command_repository = DuckDbDeckCommandRepository(self.connection)
         query_repository = DuckDbDeckQueryRepository(self.connection)
@@ -128,6 +187,109 @@ class TestDuckDbRepository(unittest.TestCase):
 
         command_repository.delete_deck(deck_id)
         self.assertEqual([], query_repository.list_decks())
+
+    def test_schema_repository_migrates_legacy_bcnf_tables(self) -> None:
+        legacy_dir = tempfile.TemporaryDirectory()
+        try:
+            config = load_config(Path(legacy_dir.name))
+            connection = create_connection(config.db_path)
+            try:
+                connection.execute(
+                    """
+                    CREATE TABLE card_type (name VARCHAR PRIMARY KEY);
+                    CREATE TABLE attribute (name VARCHAR PRIMARY KEY);
+                    CREATE TABLE race (name VARCHAR PRIMARY KEY);
+                    CREATE TABLE archetype (name VARCHAR PRIMARY KEY);
+                    CREATE TABLE card_set (name VARCHAR PRIMARY KEY);
+                    CREATE TABLE card (
+                        id BIGINT PRIMARY KEY,
+                        name VARCHAR NOT NULL UNIQUE,
+                        card_type VARCHAR NOT NULL,
+                        frame_type VARCHAR,
+                        attribute VARCHAR,
+                        race VARCHAR,
+                        level TINYINT,
+                        atk SMALLINT,
+                        def SMALLINT,
+                        description TEXT,
+                        is_extra_deck BOOLEAN NOT NULL DEFAULT FALSE
+                    );
+                    CREATE TABLE card_set_entry (
+                        id BIGINT PRIMARY KEY,
+                        card_id BIGINT NOT NULL,
+                        set_name VARCHAR NOT NULL,
+                        set_code VARCHAR,
+                        rarity VARCHAR,
+                        rarity_code VARCHAR,
+                        set_price DECIMAL(10, 2)
+                    );
+                    CREATE TABLE ban_status (
+                        card_id BIGINT NOT NULL,
+                        format VARCHAR NOT NULL,
+                        status VARCHAR NOT NULL,
+                        PRIMARY KEY (card_id, format)
+                    );
+                    CREATE TABLE card_price (
+                        card_id BIGINT PRIMARY KEY,
+                        cardmarket DECIMAL(10, 2),
+                        tcgplayer DECIMAL(10, 2),
+                        ebay DECIMAL(10, 2),
+                        amazon DECIMAL(10, 2),
+                        coolstuffinc DECIMAL(10, 2)
+                    );
+                    CREATE TABLE deck (
+                        id BIGINT PRIMARY KEY,
+                        name VARCHAR NOT NULL,
+                        memo TEXT,
+                        ban_format VARCHAR NOT NULL DEFAULT 'TCG',
+                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    );
+                    CREATE TABLE deck_card (
+                        deck_id BIGINT NOT NULL,
+                        card_id BIGINT NOT NULL,
+                        section VARCHAR NOT NULL,
+                        quantity TINYINT NOT NULL
+                    );
+                    CREATE TABLE card_archetype (card_id BIGINT, archetype_name VARCHAR);
+                    CREATE TABLE card_image (image_id BIGINT PRIMARY KEY, card_id BIGINT, image_url TEXT, image_small TEXT, image_cropped TEXT);
+                    CREATE TABLE seed_meta (key VARCHAR PRIMARY KEY, value VARCHAR NOT NULL);
+                    INSERT INTO card_type VALUES ('Effect Monster');
+                    INSERT INTO card_set VALUES ('Set A');
+                    INSERT INTO card VALUES (100, 'Search Dragon', 'Effect Monster', 'effect', NULL, NULL, 4, 2000, 1500, 'Dragon', FALSE);
+                    INSERT INTO card_set_entry VALUES (1, 100, 'Set A', 'A-001', 'Common', '(C)', 0.50);
+                    INSERT INTO ban_status VALUES (100, 'TCG', 'Limited');
+                    INSERT INTO card_price VALUES (100, 0.50, 0.60, NULL, NULL, NULL);
+                    INSERT INTO deck VALUES (1, 'Legacy Deck', '', 'TCG', CURRENT_TIMESTAMP);
+                    INSERT INTO deck_card VALUES (1, 100, 'MAIN', 2);
+                    """
+                )
+
+                DuckDbSeedSchemaRepository(connection, config.schema_path).apply_schema()
+
+                prices = connection.execute(
+                    "SELECT source_name, price FROM card_price WHERE card_id = 100 ORDER BY source_name"
+                ).fetchall()
+                self.assertEqual(["cardmarket", "tcgplayer"], [row[0] for row in prices])
+                self.assertEqual([0.50, 0.60], [float(row[1]) for row in prices])
+                rarity_code = connection.execute("SELECT code FROM rarity WHERE name = 'Common'").fetchone()[0]
+                self.assertEqual("(C)", rarity_code)
+                set_columns = {
+                    row[0]
+                    for row in connection.execute(
+                        """
+                        SELECT column_name
+                        FROM information_schema.columns
+                        WHERE table_name = 'card_set'
+                        """
+                    ).fetchall()
+                }
+                self.assertIn("release_year", set_columns)
+                deck_total = connection.execute("SELECT SUM(quantity) FROM deck_card WHERE deck_id = 1").fetchone()[0]
+                self.assertEqual(2, deck_total)
+            finally:
+                connection.close()
+        finally:
+            legacy_dir.cleanup()
 
 
 if __name__ == "__main__":

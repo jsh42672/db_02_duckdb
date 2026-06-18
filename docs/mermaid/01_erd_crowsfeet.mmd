@@ -1,0 +1,139 @@
+erDiagram
+    CARD_TYPE ||--o{ CARD : "typed_as"
+    ATTRIBUTE ||--o{ CARD : "has_attribute"
+    RACE ||--o{ CARD : "has_race"
+    CARD ||--o{ CARD_ARCHETYPE : "categorized"
+    ARCHETYPE ||--o{ CARD_ARCHETYPE : "groups"
+    CARD ||--o{ CARD_SET_ENTRY : "printed_in"
+    CARD_SET ||--o{ CARD_SET_ENTRY : "contains"
+    RARITY ||--o{ CARD_SET_ENTRY : "uses"
+    CARD ||--o{ BAN_STATUS : "restricted_by"
+    BAN_FORMAT ||--o{ BAN_STATUS : "applies_to"
+    BAN_STATUS_TYPE ||--o{ BAN_STATUS : "classified_as"
+    CARD ||--o{ CARD_PRICE : "priced_at"
+    PRICE_SOURCE ||--o{ CARD_PRICE : "quotes"
+    CARD ||--o{ CARD_IMAGE : "shown_by"
+    BAN_FORMAT ||--o{ DECK : "validates"
+    DECK ||--o{ DECK_CARD : "contains"
+    CARD ||--o{ DECK_CARD : "used_in"
+    DECK_SECTION ||--o{ DECK_CARD : "placed_in"
+    DECK ||--o{ DECK_CARD_ROLE : "analyzed_in"
+    CARD ||--o{ DECK_CARD_ROLE : "tagged_in"
+    DECK_SECTION ||--o{ DECK_CARD_ROLE : "scoped_by"
+    ROLE_TAG ||--o{ DECK_CARD_ROLE : "labels"
+
+    CARD_TYPE {
+        string name PK
+    }
+
+    ATTRIBUTE {
+        string name PK
+    }
+
+    RACE {
+        string name PK
+    }
+
+    ARCHETYPE {
+        string name PK
+    }
+
+    CARD_SET {
+        string name PK
+        smallint release_year
+    }
+
+    RARITY {
+        string name PK
+        string code
+    }
+
+    BAN_FORMAT {
+        string name PK
+    }
+
+    BAN_STATUS_TYPE {
+        string name PK
+    }
+
+    DECK_SECTION {
+        string name PK
+    }
+
+    PRICE_SOURCE {
+        string name PK
+    }
+
+    ROLE_TAG {
+        string name PK
+    }
+
+    CARD {
+        bigint id PK
+        string name UK
+        string card_type FK
+        string frame_type
+        string attribute FK
+        string race FK
+        tinyint level
+        smallint atk
+        smallint def
+        text description
+        boolean is_extra_deck
+    }
+
+    CARD_ARCHETYPE {
+        bigint card_id PK,FK
+        string archetype_name PK,FK
+    }
+
+    CARD_SET_ENTRY {
+        bigint id PK
+        bigint card_id FK
+        string set_name FK
+        string set_code
+        string rarity FK
+        decimal set_price
+    }
+
+    BAN_STATUS {
+        bigint card_id PK,FK
+        string format PK,FK
+        string status FK
+    }
+
+    CARD_PRICE {
+        bigint card_id PK,FK
+        string source_name PK,FK
+        decimal price
+    }
+
+    CARD_IMAGE {
+        bigint image_id PK
+        bigint card_id FK
+        text image_url
+        text image_small
+        text image_cropped
+    }
+
+    DECK {
+        bigint id PK
+        string name
+        text memo
+        string ban_format FK
+        timestamp created_at
+    }
+
+    DECK_CARD {
+        bigint deck_id PK,FK
+        bigint card_id PK,FK
+        string section PK,FK
+        tinyint quantity
+    }
+
+    DECK_CARD_ROLE {
+        bigint deck_id PK,FK
+        bigint card_id PK,FK
+        string section PK,FK
+        string role_name PK,FK
+    }

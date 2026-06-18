@@ -1,57 +1,25 @@
-# 데이터베이스 2026
+# YGO Deck Lab
 
-# DuckDB
+YGO Deck Lab은 유희왕 카드 데이터를 DuckDB에 저장하고 Flet GUI에서 카드 검색, 상세 조회, 덱 구성, 금지 제한 검증, 저장된 덱 조회/삭제를 수행하는 데이터베이스 텀 프로젝트입니다.
 
-https://nano5.notion.site/DuckDB-350daf211d4280189a1ecaa5ca2da47b?source=copy_link
+## 주요 기능
 
-<img width="536" height="640" alt="image" src="https://github.com/user-attachments/assets/65f1cb1b-2492-4cce-b546-79a33a8e2ba4" />
+- YGOPRODeck 공개 API 또는 캐시 데이터를 이용한 카드 데이터 초기화
+- 카드명, 효과 텍스트, 카드 종류, 속성, 종족, 아키타입, 공격력/수비력 조건 검색
+- 카드 이미지, 가격, 수록 세트, 금지 제한 정보를 포함한 상세 조회
+- MAIN / EXTRA / SIDE 덱 구성 및 카드 수량 검증
+- TCG / OCG / GOAT 포맷 기준 금지 제한 검증
+- 덱 저장, 저장된 덱 상세 조회, 덱 삭제
 
----
+## 사용 기술
 
-# 🚀 db_02_duckdb (Flet + DuckDB + uv)
+- Python
+- Flet
+- DuckDB
+- pandas
+- uv
 
-DuckDB를 사용하여 데이터를 처리하는 Flet 프로젝트
-
-## 🛠️ uv 설치 (최초 1회)
-이미 설치되어 있다면 안해도 됨
-
-Windows에 설치
-```bash
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
-powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
-```
-
-macOS/Linux에 설치
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-## 🏗️ 의존성 설치
-프로젝트 폴더에서 아래 명령어를 실행하면 `.venv` 생성되고 패키지 설치됨
-
-```bash
-uv sync
-```
-
-## ▶️ 실행 및 핫 리로드 (Run & Hot Reload)
-
-```bash
-uv run flet run -r
-```
-
-문제가 있을 경우에는 web browser 모드로 실행
-
-```bash
-uv run flet run --web -r
-```
-
----
-
-# 🃏 Term Project: YGO Deck Lab
-
-YGOProDeck 공개 API 데이터를 DuckDB에 저장하고, Flet GUI에서 카드 검색/상세 조회/덱 빌더를 제공하는 데이터베이스 텀 프로젝트입니다.
-
-## 실행
+## 실행 방법
 
 ```bash
 uv sync
@@ -60,22 +28,44 @@ uv run flet run -w -p 8550 main.py
 
 실행 후 브라우저에서 `http://127.0.0.1:8550`으로 접속합니다.
 
-## 주요 파일
+데스크톱 앱 모드로 실행하려면 다음 명령을 사용할 수 있습니다.
 
-- `main.py`: Flet entry point 및 화면 조립
-- `app/bootstrap.py`: provider, repository, service 의존성 조립
-- `domain/`: 카드/덱/시드 DTO, 상수, 규칙
-- `provider/ygoprodeck/`: API 클라이언트, 캐시, fallback, 매핑
-- `repository/duckdb/`: DuckDB 조회/저장/시딩 구현
-- `service/`: 검색, 상세, 덱 검증/저장, 초기화 비즈니스 로직
-- `views/`: 검색/덱 빌더/저장된 덱 화면 구성
-- `sql/schema.sql`: 테이블 생성 스키마
-- `sql/sample_queries.sql`: 설계서에 넣을 주요 JOIN 쿼리
-- `docs/ygo_erd_crowsfeet.html`: Crow's Foot ERD
-- `docs/design_notes.md`: 설계서 작성용 메모
+```bash
+uv run flet run main.py
+```
 
-## 데이터
+## 프로젝트 구조
 
-- 최초 실행 시 `data/ygo_cards.duckdb` 생성
-- API 응답은 `data/ygo_cards_cache.json`에 캐시
-- 네트워크가 막힌 경우에도 최소 예비 데이터로 앱 실행 가능
+```text
+app/                  의존성 조립 및 설정
+domain/               DTO, 상수, 규칙
+provider/             YGOPRODeck API, 캐시, fallback 데이터 처리
+repository/duckdb/    DuckDB 연결, SQL 실행, Repository 구현
+service/              카드 검색, 상세 조회, 덱 검증, 저장 비즈니스 로직
+views/                Flet 화면 구성
+sql/                  DuckDB DDL 및 주요 Join 쿼리
+docs/mermaid/         ERD, Architecture, Sequence Diagram 원본
+tests/                Repository 및 Service 테스트
+```
+
+## 데이터베이스 설계
+
+주요 엔터티는 `card`, `deck`이며, 주요 관계 테이블은 `deck_card`, `card_archetype`, `card_set_entry`, `ban_status`, `card_price`, `card_image`입니다.
+
+카드 종류, 속성, 종족, 아키타입, 수록 세트, 레어도, 금지 제한 포맷, 가격 출처처럼 반복되는 값은 별도 테이블로 분리하여 중복을 줄였습니다.
+
+DDL은 `sql/schema.sql`에 정리되어 있고, 세 개 이상의 테이블을 사용하는 Join 예시는 `sql/sample_queries.sql`에서 확인할 수 있습니다.
+
+## 설계 자료
+
+- `docs/mermaid/01_erd_crowsfeet.mmd`: Crow's Foot ERD
+- `docs/mermaid/02_architecture.mmd`: 전체 아키텍처
+- `docs/mermaid/03_repository_class.mmd`: Repository Interface 구조
+- `docs/mermaid/04_seq_uc01_initialize.mmd` ~ `12_seq_uc09_deck_analysis.mmd`: Use Case별 Sequence Diagram
+- `docs/ygo_deck_lab_erd_import.sql`: VSCode ERD Editor import용 SQL
+
+## 테스트
+
+```bash
+uv run python -m unittest discover
+```

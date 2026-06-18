@@ -1,0 +1,51 @@
+---
+config:
+  theme: redux-color
+---
+sequenceDiagram
+    autonumber
+
+    actor User as 사용자
+    participant FE as Front-end<br/>(DeckBuilderView)
+    participant Ctrl as Controller<br/>(SaveDeckController)
+    participant Svc as Service<br/>(DefaultSavedDeckService)
+    participant Validation as Service<br/>(DefaultDeckValidationService)
+    participant Repo as Repository<br/>(DeckCommandRepository)
+    participant DB as DB:deck<br/>/ deck_card
+
+    User->>FE: 덱 이름, 메모, 포맷 입력 후 저장 요청
+    activate FE
+    FE->>Ctrl: save_deck(request)
+    activate Ctrl
+    Ctrl->>Svc: save(request)
+    activate Svc
+
+    Svc->>Validation: validate(request.items, request.ban_format)
+    activate Validation
+    Validation-->>Svc: DeckValidationResult 반환
+    deactivate Validation
+
+    alt [저장 가능]
+        Svc->>Repo: save_deck(name, memo, ban_format, items)
+        activate Repo
+        Repo->>DB: INSERT INTO deck
+        activate DB
+        DB-->>Repo: deck_id 생성
+        Repo->>DB: INSERT INTO deck_card
+        DB-->>Repo: 카드 구성 저장 완료
+        deactivate DB
+        Repo-->>Svc: deck_id 반환
+        deactivate Repo
+
+        Svc-->>Ctrl: deck_id 반환
+        Ctrl-->>FE: 저장 성공 결과 전달
+        FE-->>User: 저장 완료 메시지 표시
+    else [저장 불가]
+        Svc-->>Ctrl: 오류 결과 반환
+        Ctrl-->>FE: 저장 실패 결과 전달
+        FE-->>User: 저장 실패 사유 표시
+    end
+
+    deactivate Svc
+    deactivate Ctrl
+    deactivate FE

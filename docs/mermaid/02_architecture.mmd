@@ -1,0 +1,59 @@
+flowchart LR
+    User([사용자])
+
+    subgraph UI["Controller / Flet View"]
+        Main["main.py"]
+        SearchView["SearchView"]
+        DeckBuilderView["DeckBuilderView"]
+        SavedDecksView["SavedDecksView"]
+    end
+
+    subgraph Services["Service Layer"]
+        InitSvc["InitializeService"]
+        SearchSvc["CardSearchService"]
+        DetailSvc["CardDetailService"]
+        BuilderSvc["DeckBuilderService"]
+        ValidationSvc["DeckValidationService"]
+        SavedSvc["SavedDeckService"]
+    end
+
+    subgraph Interfaces["Interfaces"]
+        RepoIf["Repository Interfaces"]
+        ProviderIf["CardDataProvider Interface"]
+    end
+
+    subgraph Implementations["Concrete Implementations"]
+        DuckRepo["DuckDB Repositories"]
+        YgoProvider["YgoProDeckProvider"]
+    end
+
+    DuckDB[(DuckDB)]
+    API["YGOPRODeck Public API"]
+    Cache["JSON Cache / Fallback"]
+
+    User --> Main
+    Main --> SearchView
+    Main --> DeckBuilderView
+    Main --> SavedDecksView
+
+    SearchView --> SearchSvc
+    SearchView --> DetailSvc
+    DeckBuilderView --> BuilderSvc
+    DeckBuilderView --> ValidationSvc
+    DeckBuilderView --> SavedSvc
+    SavedDecksView --> SavedSvc
+    Main --> InitSvc
+
+    Services -. "DIP: 추상화에 의존" .-> RepoIf
+    Services -. "DIP: 추상화에 의존" .-> ProviderIf
+
+    RepoIf <|.. DuckRepo
+    ProviderIf <|.. YgoProvider
+
+    DuckRepo --> DuckDB
+    YgoProvider --> API
+    YgoProvider --> Cache
+
+    Bootstrap["app/bootstrap.py<br/>Dependency Injection"] -. "구현체 생성/주입" .-> Services
+    Bootstrap -.-> DuckRepo
+    Bootstrap -.-> YgoProvider

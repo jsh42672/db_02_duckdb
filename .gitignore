@@ -19,3 +19,21 @@ data/*cache*.json
 
 # VSCode
 .vscode/
+
+# Local runtime/cache data
+assets/
+
+# Report and document build artifacts
+tools/
+docs/*Final_Report*.docx
+docs/YGO_Deck_Lab_*.docx
+docs/*설계서*.doc
+docs/*설계서*.docx
+docs/*logicalfix*.docx
+docs/final_report_assets/
+docs/lo_test/
+docs/render_check*/
+docs/lo_profile*/
+tmp_*.txt
+unnamed-*.png
+conceptual design.png

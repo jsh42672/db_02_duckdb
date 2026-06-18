@@ -1,0 +1,54 @@
+---
+config:
+  theme: redux-color
+---
+sequenceDiagram
+    autonumber
+
+    actor User as 사용자
+    participant FE as Front-end<br/>(DeckBuilderView)
+    participant Ctrl as Controller<br/>(DeckValidationController)
+    participant Svc as Service<br/>(DefaultDeckValidationService)
+    participant Repo as Repository<br/>(DeckValidationRepository)
+    participant DB as DB:card<br/>/ ban_status
+
+    User->>FE: 카드를 덱 영역에 추가
+    activate FE
+    FE->>Ctrl: validate_deck(items, ban_format)
+    activate Ctrl
+    Ctrl->>Svc: validate(items, ban_format)
+    activate Svc
+
+    Svc->>Repo: get_validation_card_map(card_ids)
+    activate Repo
+    Repo->>DB: SELECT id, name, is_extra_deck FROM card WHERE id IN (...)
+    activate DB
+    DB-->>Repo: 카드 기본 검증 정보
+    deactivate DB
+    Repo-->>Svc: 카드 검증 맵
+    deactivate Repo
+
+    Svc->>Repo: get_ban_status_map(card_ids, ban_format)
+    activate Repo
+    Repo->>DB: SELECT card_id, status FROM ban_status WHERE format = ?
+    activate DB
+    DB-->>Repo: 금지 제한 상태
+    deactivate DB
+    Repo-->>Svc: 금지 제한 맵
+    deactivate Repo
+
+    Svc->>Svc: 수량, 덱 구역, 금지 제한 규칙 검사
+
+    alt [검증 성공]
+        Svc-->>Ctrl: DeckValidationResult(valid=True)
+        Ctrl-->>FE: 추가 가능 결과 전달
+        FE-->>User: 덱 목록 갱신
+    else [검증 실패]
+        Svc-->>Ctrl: 오류 메시지 포함 결과
+        Ctrl-->>FE: 검증 실패 결과 전달
+        FE-->>User: 경고 메시지 출력
+    end
+
+    deactivate Svc
+    deactivate Ctrl
+    deactivate FE

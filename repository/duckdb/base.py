@@ -18,7 +18,7 @@ class BaseDuckDbRepository:
         self.con.register(view_name, frame)
         try:
             self.con.execute(
-                f'INSERT INTO "{table}" ({quoted_columns}) SELECT {quoted_columns} FROM {view_name}'
+                f'INSERT OR IGNORE INTO "{table}" ({quoted_columns}) SELECT {quoted_columns} FROM {view_name}'
             )
         finally:
             self.con.unregister(view_name)

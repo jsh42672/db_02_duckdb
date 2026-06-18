@@ -1,0 +1,81 @@
+---
+config:
+  theme: redux-color
+---
+sequenceDiagram
+    autonumber
+
+    actor User as 사용자
+    participant FE as Front-end<br/>(AppShellView)
+    participant Ctrl as Controller<br/>(InitializeController)
+    participant Svc as Service<br/>(DefaultInitializeService)
+    participant Repo as Repository<br/>(SeedRepository)
+    participant Provider as Provider<br/>(YgoProDeckProvider)
+    participant DB as DB:seed_meta<br/>/ card
+
+    User->>FE: 앱 실행
+    activate FE
+    FE->>Ctrl: initialize_app()
+    activate Ctrl
+    Ctrl->>Svc: initialize()
+    activate Svc
+
+    Svc->>Repo: apply_schema()
+    activate Repo
+    Repo->>DB: CREATE TABLE IF NOT EXISTS ...
+    activate DB
+    DB-->>Repo: 스키마 적용 완료
+    deactivate DB
+    Repo-->>Svc: 완료
+    deactivate Repo
+
+    Svc->>Repo: card_count()
+    activate Repo
+    Repo->>DB: SELECT COUNT(*) FROM card
+    activate DB
+    DB-->>Repo: 카드 수 반환
+    deactivate DB
+    Repo-->>Svc: 카드 수 반환
+    deactivate Repo
+
+    alt [카드 데이터 비어 있음]
+        Svc->>Provider: fetch_cards()
+        activate Provider
+        Provider-->>Svc: 카드 데이터와 source 반환
+        deactivate Provider
+
+        Svc->>Repo: seed_cards(cards, source)
+        activate Repo
+        Repo->>DB: INSERT INTO card / card_image / card_price / ...
+        activate DB
+        DB-->>Repo: 저장 완료
+        deactivate DB
+        Repo-->>Svc: 시딩 완료
+        deactivate Repo
+    else [카드 데이터 존재]
+        Svc->>Repo: get_meta_value("seed_source")
+        activate Repo
+        Repo->>DB: SELECT value FROM seed_meta WHERE key = ?
+        activate DB
+        DB-->>Repo: 저장된 시딩 정보
+        deactivate DB
+        Repo-->>Svc: 시딩 정보 반환
+        deactivate Repo
+    end
+
+    Svc->>Repo: get_summary()
+    activate Repo
+    Repo->>DB: SELECT COUNT(*) FROM card / archetype / card_set
+    activate DB
+    DB-->>Repo: 요약 통계
+    deactivate DB
+    Repo-->>Svc: AppSummaryDTO 반환
+    deactivate Repo
+
+    Svc-->>Ctrl: AppSummaryDTO 반환
+    Ctrl-->>FE: 초기 화면 데이터 전달
+    FE-->>User: 메인 화면 출력
+
+    deactivate Svc
+    deactivate Ctrl
+    deactivate FE

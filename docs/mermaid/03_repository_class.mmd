@@ -1,0 +1,88 @@
+classDiagram
+    direction LR
+
+    class ICardQueryRepository {
+        <<interface>>
+        +search_cards(filters) DataFrame
+        +card_count() int
+    }
+
+    class ICardDetailRepository {
+        <<interface>>
+        +get_card_detail(card_id) DataFrame
+    }
+
+    class ILookupRepository {
+        <<interface>>
+        +get_lookup_options() DataFrame
+        +get_summary() DataFrame
+    }
+
+    class IDeckCommandRepository {
+        <<interface>>
+        +save_deck(name, memo, ban_format, items) int
+        +delete_deck(deck_id) bool
+    }
+
+    class IDeckQueryRepository {
+        <<interface>>
+        +list_decks() DataFrame
+        +get_deck_detail(deck_id) DataFrame
+        +deck_count() int
+    }
+
+    class IDeckValidationRepository {
+        <<interface>>
+        +get_validation_card_map(card_ids) dict
+        +get_ban_status_map(card_ids, ban_format) dict
+        +get_legal_candidates(extra_deck, ban_format, limit) DataFrame
+    }
+
+    class ISeedRepository {
+        <<interface>>
+        +apply_schema()
+        +replace_catalog()
+        +seed_cards(cards, source)
+        +get_meta_value(key) string
+        +set_meta_value(key, value)
+    }
+
+    class ICardDataProvider {
+        <<interface>>
+        +fetch_cards() list~SeedCardDTO~
+    }
+
+    class DuckDbCardQueryRepository
+    class DuckDbCardDetailRepository
+    class DuckDbLookupRepository
+    class DuckDbDeckCommandRepository
+    class DuckDbDeckQueryRepository
+    class DuckDbDeckValidationRepository
+    class DuckDbSeedRepositories
+    class YgoProDeckProvider
+
+    class DefaultCardSearchService
+    class DefaultCardDetailService
+    class DefaultLookupService
+    class DefaultDeckValidationService
+    class DefaultSavedDeckService
+    class DefaultInitializeService
+
+    DuckDbCardQueryRepository ..|> ICardQueryRepository
+    DuckDbCardDetailRepository ..|> ICardDetailRepository
+    DuckDbLookupRepository ..|> ILookupRepository
+    DuckDbDeckCommandRepository ..|> IDeckCommandRepository
+    DuckDbDeckQueryRepository ..|> IDeckQueryRepository
+    DuckDbDeckValidationRepository ..|> IDeckValidationRepository
+    DuckDbSeedRepositories ..|> ISeedRepository
+    YgoProDeckProvider ..|> ICardDataProvider
+
+    DefaultCardSearchService --> ICardQueryRepository
+    DefaultCardDetailService --> ICardDetailRepository
+    DefaultLookupService --> ILookupRepository
+    DefaultDeckValidationService --> IDeckValidationRepository
+    DefaultSavedDeckService --> IDeckCommandRepository
+    DefaultSavedDeckService --> IDeckQueryRepository
+    DefaultSavedDeckService --> DefaultDeckValidationService
+    DefaultInitializeService --> ISeedRepository
+    DefaultInitializeService --> ICardDataProvider

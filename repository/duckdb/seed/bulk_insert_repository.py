@@ -16,14 +16,17 @@ class DuckDbSeedBulkInsertRepository(BaseDuckDbRepository):
         attributes: set[str] = set()
         races: set[str] = set()
         archetypes: set[str] = set()
-        set_names: set[str] = set()
+        set_years: dict[str, int | None] = {}
+        rarities: dict[str, str | None] = {}
+        ban_formats: set[str] = set()
+        ban_status_types: set[str] = set()
 
         card_rows: list[tuple[Any, ...]] = []
         card_archetypes: set[tuple[int, str]] = set()
         set_entries: list[tuple[Any, ...]] = []
         set_entry_keys: set[tuple[Any, ...]] = set()
         ban_rows: set[tuple[int, str, str]] = set()
-        price_rows: dict[int, tuple[Any, ...]] = {}
+        price_rows: set[tuple[int, str, float]] = set()
         image_rows: dict[int, tuple[Any, ...]] = {}
         set_entry_id = 1
 
@@ -56,11 +59,15 @@ class DuckDbSeedBulkInsertRepository(BaseDuckDbRepository):
             for set_info in card.card_sets:
                 if not set_info.set_name:
                     continue
-                set_names.add(set_info.set_name)
+                if set_info.set_name not in set_years or set_years[set_info.set_name] is None:
+                    set_years[set_info.set_name] = set_info.release_year
                 key = (card.id, set_info.set_code, set_info.set_rarity)
                 if key in set_entry_keys:
                     continue
                 set_entry_keys.add(key)
+                if set_info.set_rarity:
+                    if set_info.set_rarity not in rarities or rarities[set_info.set_rarity] is None:
+                        rarities[set_info.set_rarity] = set_info.set_rarity_code
                 set_entries.append(
                     (
                         set_entry_id,
@@ -68,25 +75,28 @@ class DuckDbSeedBulkInsertRepository(BaseDuckDbRepository):
                         set_info.set_name,
                         set_info.set_code,
                         set_info.set_rarity,
-                        set_info.set_rarity_code,
                         set_info.set_price,
                     )
                 )
                 set_entry_id += 1
 
             for ban_status in card.ban_statuses:
+                ban_formats.add(ban_status.format)
+                ban_status_types.add(ban_status.status)
                 ban_rows.add((card.id, ban_status.format, ban_status.status))
 
             if card.card_prices:
                 price = card.card_prices[0]
-                price_rows[card.id] = (
-                    card.id,
-                    price.cardmarket_price,
-                    price.tcgplayer_price,
-                    price.ebay_price,
-                    price.amazon_price,
-                    price.coolstuffinc_price,
+                source_values = (
+                    ("cardmarket", price.cardmarket_price),
+                    ("tcgplayer", price.tcgplayer_price),
+                    ("ebay", price.ebay_price),
+                    ("amazon", price.amazon_price),
+                    ("coolstuffinc", price.coolstuffinc_price),
                 )
+                for source_name, source_price in source_values:
+                    if source_price is not None:
+                        price_rows.add((card.id, source_name, source_price))
 
             for image in card.card_images:
                 image_rows[image.id] = (
@@ -103,7 +113,14 @@ class DuckDbSeedBulkInsertRepository(BaseDuckDbRepository):
             self.bulk_insert("attribute", ["name"], [(name,) for name in sorted(attributes)])
             self.bulk_insert("race", ["name"], [(name,) for name in sorted(races)])
             self.bulk_insert("archetype", ["name"], [(name,) for name in sorted(archetypes)])
-            self.bulk_insert("card_set", ["name"], [(name,) for name in sorted(set_names)])
+            self.bulk_insert(
+                "card_set",
+                ["name", "release_year"],
+                [(name, set_years[name]) for name in sorted(set_years)],
+            )
+            self.bulk_insert("rarity", ["name", "code"], sorted(rarities.items()))
+            self.bulk_insert("ban_format", ["name"], [(name,) for name in sorted(ban_formats)])
+            self.bulk_insert("ban_status_type", ["name"], [(name,) for name in sorted(ban_status_types)])
             self.bulk_insert(
                 "card",
                 [
@@ -124,14 +141,14 @@ class DuckDbSeedBulkInsertRepository(BaseDuckDbRepository):
             self.bulk_insert("card_archetype", ["card_id", "archetype_name"], sorted(card_archetypes))
             self.bulk_insert(
                 "card_set_entry",
-                ["id", "card_id", "set_name", "set_code", "rarity", "rarity_code", "set_price"],
+                ["id", "card_id", "set_name", "set_code", "rarity", "set_price"],
                 set_entries,
             )
             self.bulk_insert("ban_status", ["card_id", "format", "status"], sorted(ban_rows))
             self.bulk_insert(
                 "card_price",
-                ["card_id", "cardmarket", "tcgplayer", "ebay", "amazon", "coolstuffinc"],
-                list(price_rows.values()),
+                ["card_id", "source_name", "price"],
+                sorted(price_rows),
             )
             self.bulk_insert(
                 "card_image",

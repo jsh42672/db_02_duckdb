@@ -1,0 +1,43 @@
+---
+config:
+  theme: redux-color
+---
+sequenceDiagram
+    autonumber
+
+    actor User as 사용자
+    participant FE as Front-end<br/>(CardSearchView)
+    participant Ctrl as Controller<br/>(CardSearchController)
+    participant Svc as Service<br/>(DefaultCardSearchService)
+    participant Repo as Repository<br/>(CardQueryRepository)
+    participant DB as DB:card<br/>/ card_archetype<br/>/ card_image
+
+    User->>FE: 카드 검색 조건 입력
+    activate FE
+    FE->>Ctrl: search_cards(filters)
+    activate Ctrl
+    Ctrl->>Svc: search(filters)
+    activate Svc
+
+    Svc->>Repo: search_cards(filters)
+    activate Repo
+    Repo->>DB: 카드 검색 SQL 실행
+    activate DB
+    DB-->>Repo: 검색 결과 레코드셋
+    deactivate DB
+    Repo-->>Svc: CardSummaryDTO 목록
+    deactivate Repo
+
+    alt [검색 결과 존재]
+        Svc-->>Ctrl: 검색 결과 반환
+        Ctrl-->>FE: 결과 목록 전달
+        FE-->>User: 카드 목록 표시
+    else [검색 결과 없음]
+        Svc-->>Ctrl: 빈 목록 반환
+        Ctrl-->>FE: 빈 결과 전달
+        FE-->>User: 검색 결과 없음 표시
+    end
+
+    deactivate Svc
+    deactivate Ctrl
+    deactivate FE

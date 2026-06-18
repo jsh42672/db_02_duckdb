@@ -1,0 +1,75 @@
+---
+config:
+  theme: redux-color
+---
+sequenceDiagram
+    autonumber
+
+    actor User as 사용자
+    participant FE as Front-end<br/>(SavedDeckView)
+    participant Ctrl as Controller<br/>(SavedDeckController)
+    participant Svc as Service<br/>(DefaultSavedDeckService)
+    participant QueryRepo as Repository<br/>(DeckQueryRepository)
+    participant CmdRepo as Repository<br/>(DeckCommandRepository)
+    participant DB as DB:deck<br/>/ deck_card<br/>/ card<br/>/ ban_status
+
+    User->>FE: 저장된 덱 화면 선택
+    activate FE
+    FE->>Ctrl: list_saved_decks()
+    activate Ctrl
+    Ctrl->>Svc: list()
+    activate Svc
+    Svc->>QueryRepo: list_decks()
+    activate QueryRepo
+    QueryRepo->>DB: 저장 덱 목록 조회 SQL 실행
+    activate DB
+    DB-->>QueryRepo: 저장 덱 목록
+    deactivate DB
+    QueryRepo-->>Svc: SavedDeckSummaryDTO 목록
+    deactivate QueryRepo
+    Svc-->>Ctrl: 저장 덱 목록 반환
+    Ctrl-->>FE: 저장 덱 목록 전달
+    FE-->>User: 저장 덱 목록 표시
+
+    User->>FE: 특정 덱 선택
+    FE->>Ctrl: get_saved_deck_detail(deck_id)
+    Ctrl->>Svc: detail(deck_id)
+    Svc->>QueryRepo: get_deck_detail(deck_id)
+    activate QueryRepo
+    QueryRepo->>DB: 저장 덱 상세 Join 조회 SQL 실행
+    activate DB
+    DB-->>QueryRepo: 메인 / 엑스트라 / 사이드 구성 또는 NULL
+    deactivate DB
+
+    alt [덱 존재]
+        QueryRepo-->>Svc: SavedDeckDetailDTO 반환
+        Svc-->>Ctrl: 덱 상세 반환
+        Ctrl-->>FE: 상세 데이터 전달
+        FE-->>User: 덱 상세 표시
+    else [덱 없음]
+        QueryRepo-->>Svc: NULL 반환
+        Svc-->>Ctrl: 조회 실패 결과 반환
+        Ctrl-->>FE: 안내 메시지 전달
+        FE-->>User: 덱 정보를 찾을 수 없음 표시
+    end
+    deactivate QueryRepo
+
+    User->>FE: 덱 삭제 확인
+    FE->>Ctrl: delete_saved_deck(deck_id)
+    Ctrl->>Svc: delete(deck_id)
+    Svc->>CmdRepo: delete_deck(deck_id)
+    activate CmdRepo
+    CmdRepo->>DB: DELETE FROM deck_card WHERE deck_id = ?
+    activate DB
+    CmdRepo->>DB: DELETE FROM deck WHERE id = ?
+    DB-->>CmdRepo: 삭제 완료
+    deactivate DB
+    CmdRepo-->>Svc: 삭제 완료
+    deactivate CmdRepo
+    Svc-->>Ctrl: 삭제 완료 반환
+    Ctrl-->>FE: 목록 갱신 전달
+    FE-->>User: 저장 덱 목록 새로고침
+
+    deactivate Svc
+    deactivate Ctrl
+    deactivate FE
