@@ -1,12 +1,11 @@
 [project]
-name = "db-02-duckdb"
+name = "ygo-deck-lab"
 version = "0.1.0"
-description = "Add your description here"
+description = "Flet and DuckDB application for Yu-Gi-Oh card search and deck management"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.11"
 dependencies = [
     "duckdb>=1.5.2",
     "flet>=0.84.0",
-    "flet-web==0.84.0",
     "pandas>=3.0.2",
 ]

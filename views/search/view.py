@@ -19,6 +19,7 @@ class SearchView:
         self.show_snack = show_snack
         self.state = SearchViewState()
 
+        # DB의 코드 테이블 값으로 필터 선택지를 구성한다.
         options = lookup_service.options()
         self.controls = SearchControls(options, self.perform_search, self.reset_filters)
         self.result_list = SearchResultList()
@@ -44,6 +45,7 @@ class SearchView:
         )
 
     def perform_search(self, e=None) -> None:
+        # Flet 입력값을 DB와 독립적인 검색 DTO로 묶어 Service에 전달한다.
         cards = self.search_service.search(
             CardSearchFilterDTO(
                 keyword=self.controls.keyword_input.value or "",
@@ -67,6 +69,7 @@ class SearchView:
         self.perform_search()
 
     def select_card(self, card_id: int) -> None:
+        # 목록 DTO 대신 상세 DTO를 다시 조회해 오른쪽 패널을 갱신한다.
         detail = self.detail_service.get(int(card_id))
         if detail is None:
             self.show_snack("카드를 찾을 수 없습니다.", True)

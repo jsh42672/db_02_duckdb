@@ -6,6 +6,7 @@ from repository.duckdb.base import BaseDuckDbRepository
 
 class DuckDbCardDetailRepository(BaseDuckDbRepository):
     def get_card_detail(self, card_id: int) -> CardDetailDTO | None:
+        # 판매처별 세로형 가격 행을 조건 집계하여 한 카드의 가격 정보로 펼친다.
         row = self.con.execute(
             """
             SELECT
@@ -52,6 +53,7 @@ class DuckDbCardDetailRepository(BaseDuckDbRepository):
         if row is None:
             return None
 
+        # 수록 세트와 금지 제한은 cardinality가 달라 별도 조회 후 DTO에서 합친다.
         sets = self.con.execute(
             """
             SELECT e.set_name, e.set_code, e.rarity, r.code AS rarity_code, e.set_price
@@ -73,6 +75,7 @@ class DuckDbCardDetailRepository(BaseDuckDbRepository):
             [card_id],
         ).fetchall()
 
+        # View가 DB 구조를 알 필요가 없도록 조회 결과를 하나의 상세 DTO로 변환한다.
         return CardDetailDTO(
             id=row[0],
             name=row[1],

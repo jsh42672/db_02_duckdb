@@ -3,31 +3,31 @@ classDiagram
 
     class ICardQueryRepository {
         <<interface>>
-        +search_cards(filters) DataFrame
+        +search_cards(filters) list~CardSummaryDTO~
         +card_count() int
     }
 
     class ICardDetailRepository {
         <<interface>>
-        +get_card_detail(card_id) DataFrame
+        +get_card_detail(card_id) CardDetailDTO
     }
 
     class ILookupRepository {
         <<interface>>
-        +get_lookup_options() DataFrame
-        +get_summary() DataFrame
+        +get_lookup_options() LookupOptionsDTO
+        +get_summary() AppSummaryDTO
     }
 
     class IDeckCommandRepository {
         <<interface>>
         +save_deck(name, memo, ban_format, items) int
-        +delete_deck(deck_id) bool
+        +delete_deck(deck_id) None
     }
 
     class IDeckQueryRepository {
         <<interface>>
-        +list_decks() DataFrame
-        +get_deck_detail(deck_id) DataFrame
+        +list_decks() list~SavedDeckSummaryDTO~
+        +get_deck_detail(deck_id) SavedDeckDetailDTO
         +deck_count() int
     }
 
@@ -35,14 +35,22 @@ classDiagram
         <<interface>>
         +get_validation_card_map(card_ids) dict
         +get_ban_status_map(card_ids, ban_format) dict
-        +get_legal_candidates(extra_deck, ban_format, limit) DataFrame
+        +get_legal_candidates(extra_deck, ban_format, limit) list~dict~
     }
 
-    class ISeedRepository {
+    class ISeedSchemaRepository {
         <<interface>>
         +apply_schema()
         +replace_catalog()
+    }
+
+    class ISeedBulkInsertRepository {
+        <<interface>>
         +seed_cards(cards, source)
+    }
+
+    class ISeedMetaRepository {
+        <<interface>>
         +get_meta_value(key) string
         +set_meta_value(key, value)
     }
@@ -58,7 +66,9 @@ classDiagram
     class DuckDbDeckCommandRepository
     class DuckDbDeckQueryRepository
     class DuckDbDeckValidationRepository
-    class DuckDbSeedRepositories
+    class DuckDbSeedSchemaRepository
+    class DuckDbSeedBulkInsertRepository
+    class DuckDbSeedMetaRepository
     class YgoProDeckProvider
 
     class DefaultCardSearchService
@@ -74,7 +84,9 @@ classDiagram
     DuckDbDeckCommandRepository ..|> IDeckCommandRepository
     DuckDbDeckQueryRepository ..|> IDeckQueryRepository
     DuckDbDeckValidationRepository ..|> IDeckValidationRepository
-    DuckDbSeedRepositories ..|> ISeedRepository
+    DuckDbSeedSchemaRepository ..|> ISeedSchemaRepository
+    DuckDbSeedBulkInsertRepository ..|> ISeedBulkInsertRepository
+    DuckDbSeedMetaRepository ..|> ISeedMetaRepository
     YgoProDeckProvider ..|> ICardDataProvider
 
     DefaultCardSearchService --> ICardQueryRepository
@@ -84,5 +96,7 @@ classDiagram
     DefaultSavedDeckService --> IDeckCommandRepository
     DefaultSavedDeckService --> IDeckQueryRepository
     DefaultSavedDeckService --> DefaultDeckValidationService
-    DefaultInitializeService --> ISeedRepository
+    DefaultInitializeService --> ISeedSchemaRepository
+    DefaultInitializeService --> ISeedBulkInsertRepository
+    DefaultInitializeService --> ISeedMetaRepository
     DefaultInitializeService --> ICardDataProvider

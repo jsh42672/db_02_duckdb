@@ -260,7 +260,6 @@ def fallback_cards() -> list[SeedCardDTO]:
                 card_sets=[
                     CardSetSeedDTO(
                         set_name="Sample Classroom Pack",
-                        release_year=2024,
                         set_code=f"SAMPLE-{int(raw['id']) % 1000:03d}",
                         set_rarity="Common",
                         set_rarity_code="(C)",

@@ -11,7 +11,7 @@ class DuckDbSeedSchemaRepository(BaseDuckDbRepository):
         self.schema_path = schema_path
 
     def apply_schema(self) -> None:
-        self._prepare_legacy_tables_for_schema()
+        # 최신 DDL을 먼저 적용한 뒤 과거 과제 버전의 비정규화 테이블을 점진적으로 변환한다.
         self.con.execute(self.schema_path.read_text(encoding="utf-8"))
         self._migrate_legacy_bcnf_tables()
 
@@ -39,29 +39,21 @@ class DuckDbSeedSchemaRepository(BaseDuckDbRepository):
         ).fetchone()
         return bool(row and row[0])
 
-    def _prepare_legacy_tables_for_schema(self) -> None:
-        if self._table_exists("card_set") and "release_year" not in self._columns("card_set"):
-            self.con.execute("ALTER TABLE card_set ADD COLUMN release_year SMALLINT")
-
     def _migrate_legacy_bcnf_tables(self) -> None:
+        # 컬럼 존재 여부로 이전 스키마를 식별해 이미 변환된 DB에는 같은 작업을 반복하지 않는다.
         has_legacy_price = self._table_exists("card_price") and "cardmarket" in self._columns("card_price")
         has_legacy_rarity = self._table_exists("card_set_entry") and "rarity_code" in self._columns("card_set_entry")
         if has_legacy_price:
             self._migrate_card_price()
         if has_legacy_rarity:
             self._migrate_card_set_entry()
-        if self._table_exists("card_set"):
-            self._ensure_card_set_release_year()
         if self._table_exists("ban_status"):
             self._backfill_ban_code_tables()
         if self._table_exists("deck") and self._table_exists("deck_card"):
             self._backfill_deck_section_table()
 
-    def _ensure_card_set_release_year(self) -> None:
-        if "release_year" not in self._columns("card_set"):
-            self.con.execute("ALTER TABLE card_set ADD COLUMN release_year SMALLINT")
-
     def _migrate_card_price(self) -> None:
+        # 판매처별 가격 컬럼을 (card_id, source_name, price) 구조로 세로 분해한다.
         self.con.execute("ALTER TABLE card_price RENAME TO card_price_legacy")
         self.con.execute(
             """
@@ -86,6 +78,7 @@ class DuckDbSeedSchemaRepository(BaseDuckDbRepository):
         self.con.execute("DROP TABLE card_price_legacy")
 
     def _migrate_card_set_entry(self) -> None:
+        # rarity와 rarity_code의 함수 종속을 rarity 코드 테이블로 이동한다.
         self.con.execute(
             """
             INSERT OR IGNORE INTO rarity (name, code)
@@ -155,8 +148,8 @@ class DuckDbSeedSchemaRepository(BaseDuckDbRepository):
         )
 
     def replace_catalog(self) -> None:
+        # fallback 카탈로그 교체 시 FK 자식 테이블부터 제거해 새 스키마를 다시 적용한다.
         for table in (
-            "deck_card_role",
             "deck_card",
             "deck",
             "card_image",
@@ -165,10 +158,7 @@ class DuckDbSeedSchemaRepository(BaseDuckDbRepository):
             "card_set_entry",
             "card_archetype",
             "card",
-            "card_release",
-            "card_set_release",
             "card_set",
-            "role_tag",
             "price_source",
             "deck_section",
             "ban_status_type",

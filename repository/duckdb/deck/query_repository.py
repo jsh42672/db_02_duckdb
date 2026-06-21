@@ -9,6 +9,7 @@ class DuckDbDeckQueryRepository(BaseDuckDbRepository):
         return self.con.execute("SELECT COUNT(*) FROM deck").fetchone()[0]
 
     def list_decks(self) -> list[SavedDeckSummaryDTO]:
+        # 목록 화면은 덱 기본 정보와 전체 카드 수만 집계해 가볍게 조회한다.
         rows = self.con.execute(
             """
             SELECT
@@ -42,6 +43,7 @@ class DuckDbDeckQueryRepository(BaseDuckDbRepository):
         if deck is None:
             return None
 
+        # 상세 화면에서는 카드 정보와 해당 덱 포맷의 금지 제한 상태를 함께 Join한다.
         rows = self.con.execute(
             """
             SELECT

@@ -15,8 +15,7 @@ CREATE TABLE archetype (
 );
 
 CREATE TABLE card_set (
-    name VARCHAR PRIMARY KEY,
-    release_year SMALLINT
+    name VARCHAR PRIMARY KEY
 );
 
 CREATE TABLE rarity (
@@ -37,10 +36,6 @@ CREATE TABLE deck_section (
 );
 
 CREATE TABLE price_source (
-    name VARCHAR PRIMARY KEY
-);
-
-CREATE TABLE role_tag (
     name VARCHAR PRIMARY KEY
 );
 
@@ -128,16 +123,4 @@ CREATE TABLE deck_card (
     CONSTRAINT fk_deck_card_deck FOREIGN KEY (deck_id) REFERENCES deck(id),
     CONSTRAINT fk_deck_card_card FOREIGN KEY (card_id) REFERENCES card(id),
     CONSTRAINT fk_deck_card_section FOREIGN KEY (section) REFERENCES deck_section(name)
-);
-
-CREATE TABLE deck_card_role (
-    deck_id BIGINT NOT NULL,
-    card_id BIGINT NOT NULL,
-    section VARCHAR NOT NULL,
-    role_name VARCHAR NOT NULL,
-    PRIMARY KEY (deck_id, card_id, section, role_name),
-    CONSTRAINT fk_deck_card_role_deck FOREIGN KEY (deck_id) REFERENCES deck(id),
-    CONSTRAINT fk_deck_card_role_card FOREIGN KEY (card_id) REFERENCES card(id),
-    CONSTRAINT fk_deck_card_role_section FOREIGN KEY (section) REFERENCES deck_section(name),
-    CONSTRAINT fk_deck_card_role_role_tag FOREIGN KEY (role_name) REFERENCES role_tag(name)
 );

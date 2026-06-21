@@ -10,6 +10,7 @@ class DuckDbCardQueryRepository(BaseDuckDbRepository):
         return self.con.execute("SELECT COUNT(*) FROM card").fetchone()[0]
 
     def search_cards(self, filters: CardSearchFilterDTO) -> list[CardSummaryDTO]:
+        # 선택된 필터만 WHERE 절에 추가하고 실제 값은 모두 파라미터로 분리한다.
         conditions: list[str] = []
         params: list[object] = []
 
@@ -27,6 +28,7 @@ class DuckDbCardQueryRepository(BaseDuckDbRepository):
             conditions.append("c.race = ?")
             params.append(filters.race)
         if filters.archetype:
+            # 다대다 관계는 중복 행을 만들지 않도록 EXISTS로 필터링한다.
             conditions.append(
                 """
                 EXISTS (
@@ -54,6 +56,7 @@ class DuckDbCardQueryRepository(BaseDuckDbRepository):
 
         where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
         params.append(filters.limit)
+        # 목록에는 대표 이미지 한 장과 아키타입 문자열을 함께 반환한다.
         rows = self.con.execute(
             f"""
             SELECT

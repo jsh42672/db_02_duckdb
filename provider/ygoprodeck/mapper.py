@@ -70,7 +70,6 @@ def map_api_cards(payload_cards: list[dict[str, Any]]) -> list[SeedCardDTO]:
                 card_sets=[
                     CardSetSeedDTO(
                         set_name=clean_text(set_info.get("set_name")) or "",
-                        release_year=None,
                         set_code=clean_text(set_info.get("set_code")),
                         set_rarity=clean_text(set_info.get("set_rarity")),
                         set_rarity_code=clean_text(set_info.get("set_rarity_code")),

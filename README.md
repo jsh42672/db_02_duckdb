@@ -23,15 +23,13 @@ YGO Deck Lab은 유희왕 카드 데이터를 DuckDB에 저장하고 Flet GUI에
 
 ```bash
 uv sync
-uv run flet run -w -p 8550 main.py
+uv run flet run main.py
 ```
 
-실행 후 브라우저에서 `http://127.0.0.1:8550`으로 접속합니다.
-
-데스크톱 앱 모드로 실행하려면 다음 명령을 사용할 수 있습니다.
+웹 브라우저로 확인해야 할 때만 다음 명령을 사용합니다.
 
 ```bash
-uv run flet run main.py
+uv run flet run -w -p 8550 main.py
 ```
 
 ## 프로젝트 구조
@@ -61,7 +59,7 @@ DDL은 `sql/schema.sql`에 정리되어 있고, 세 개 이상의 테이블을 �
 - `docs/mermaid/01_erd_crowsfeet.mmd`: Crow's Foot ERD
 - `docs/mermaid/02_architecture.mmd`: 전체 아키텍처
 - `docs/mermaid/03_repository_class.mmd`: Repository Interface 구조
-- `docs/mermaid/04_seq_uc01_initialize.mmd` ~ `12_seq_uc09_deck_analysis.mmd`: Use Case별 Sequence Diagram
+- `docs/mermaid/04_seq_uc01_initialize.mmd` ~ `09_seq_uc06_saved_deck_query_delete.mmd`: 구현 Use Case별 Sequence Diagram
 - `docs/ygo_deck_lab_erd_import.sql`: VSCode ERD Editor import용 SQL
 
 ## 테스트

@@ -6,18 +6,15 @@ sequenceDiagram
     autonumber
 
     actor User as 사용자
-    participant FE as Front-end<br/>(AppShellView)
-    participant Ctrl as Controller<br/>(InitializeController)
+    participant Main as Flet Entry / View<br/>(main.py)
     participant Svc as Service<br/>(DefaultInitializeService)
-    participant Repo as Repository<br/>(SeedRepository)
+    participant Repo as Repository<br/>(DuckDB Seed/Card/Lookup Repositories)
     participant Provider as Provider<br/>(YgoProDeckProvider)
     participant DB as DB:seed_meta<br/>/ card
 
-    User->>FE: 앱 실행
-    activate FE
-    FE->>Ctrl: initialize_app()
-    activate Ctrl
-    Ctrl->>Svc: initialize()
+    User->>Main: 앱 실행
+    activate Main
+    Main->>Svc: initialize()
     activate Svc
 
     Svc->>Repo: apply_schema()
@@ -72,10 +69,8 @@ sequenceDiagram
     Repo-->>Svc: AppSummaryDTO 반환
     deactivate Repo
 
-    Svc-->>Ctrl: AppSummaryDTO 반환
-    Ctrl-->>FE: 초기 화면 데이터 전달
-    FE-->>User: 메인 화면 출력
+    Svc-->>Main: AppSummaryDTO 반환
+    Main-->>User: 메인 화면 출력
 
     deactivate Svc
-    deactivate Ctrl
-    deactivate FE
+    deactivate Main

@@ -12,11 +12,12 @@ class DuckDbSeedBulkInsertRepository(BaseDuckDbRepository):
         self.meta_repository = meta_repository
 
     def seed_cards(self, cards: list[SeedCardDTO], source: str) -> None:
+        # API의 중첩 배열을 정규화된 테이블별 행 집합으로 먼저 분리한다.
         card_types: set[str] = set()
         attributes: set[str] = set()
         races: set[str] = set()
         archetypes: set[str] = set()
-        set_years: dict[str, int | None] = {}
+        card_sets: set[str] = set()
         rarities: dict[str, str | None] = {}
         ban_formats: set[str] = set()
         ban_status_types: set[str] = set()
@@ -56,11 +57,11 @@ class DuckDbSeedBulkInsertRepository(BaseDuckDbRepository):
                 )
             )
 
+            # 수록 세트는 API 중복을 제거한 뒤 관계 테이블의 대체키를 부여한다.
             for set_info in card.card_sets:
                 if not set_info.set_name:
                     continue
-                if set_info.set_name not in set_years or set_years[set_info.set_name] is None:
-                    set_years[set_info.set_name] = set_info.release_year
+                card_sets.add(set_info.set_name)
                 key = (card.id, set_info.set_code, set_info.set_rarity)
                 if key in set_entry_keys:
                     continue
@@ -85,6 +86,7 @@ class DuckDbSeedBulkInsertRepository(BaseDuckDbRepository):
                 ban_status_types.add(ban_status.status)
                 ban_rows.add((card.id, ban_status.format, ban_status.status))
 
+            # 판매처별 가격을 반복 컬럼이 아닌 source_name별 행으로 변환한다.
             if card.card_prices:
                 price = card.card_prices[0]
                 source_values = (
@@ -107,17 +109,14 @@ class DuckDbSeedBulkInsertRepository(BaseDuckDbRepository):
                     image.image_url_cropped,
                 )
 
+        # 코드 테이블과 관계 테이블 전체가 함께 저장되도록 하나의 트랜잭션으로 처리한다.
         self.con.execute("BEGIN TRANSACTION")
         try:
             self.bulk_insert("card_type", ["name"], [(name,) for name in sorted(card_types)])
             self.bulk_insert("attribute", ["name"], [(name,) for name in sorted(attributes)])
             self.bulk_insert("race", ["name"], [(name,) for name in sorted(races)])
             self.bulk_insert("archetype", ["name"], [(name,) for name in sorted(archetypes)])
-            self.bulk_insert(
-                "card_set",
-                ["name", "release_year"],
-                [(name, set_years[name]) for name in sorted(set_years)],
-            )
+            self.bulk_insert("card_set", ["name"], [(name,) for name in sorted(card_sets)])
             self.bulk_insert("rarity", ["name", "code"], sorted(rarities.items()))
             self.bulk_insert("ban_format", ["name"], [(name,) for name in sorted(ban_formats)])
             self.bulk_insert("ban_status_type", ["name"], [(name,) for name in sorted(ban_status_types)])

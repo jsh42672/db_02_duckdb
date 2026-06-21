@@ -22,11 +22,14 @@ data/*cache*.json
 
 # Local runtime/cache data
 assets/
+.local/
 
 # Report and document build artifacts
 tools/
 docs/*Final_Report*.docx
 docs/YGO_Deck_Lab_*.docx
+docs/20211007_*.docx
+docs/debug_*.docx
 docs/*설계서*.doc
 docs/*설계서*.docx
 docs/*logicalfix*.docx

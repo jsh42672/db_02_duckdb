@@ -2,10 +2,16 @@ from __future__ import annotations
 
 from domain.deck.dto import DeckItemDTO
 from domain.deck.rules import status_to_limit
+from repository.interfaces import IDeckValidationRepository
+from service.card.detail_service import DefaultCardDetailService
 
 
 class DefaultDeckBuilderService:
-    def __init__(self, validation_repository, detail_service):
+    def __init__(
+        self,
+        validation_repository: IDeckValidationRepository,
+        detail_service: DefaultCardDetailService,
+    ):
         self.validation_repository = validation_repository
         self.detail_service = detail_service
 

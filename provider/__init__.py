@@ -1,3 +1,3 @@
-from .interfaces import CardDataProvider
+from .interfaces import ICardDataProvider
 
-__all__ = ["CardDataProvider"]
+__all__ = ["ICardDataProvider"]

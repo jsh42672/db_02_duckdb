@@ -46,6 +46,7 @@ class DeckBuilderView:
         )
 
     def add_card(self, card, section: str) -> None:
+        # 사용자 조작 단계에서는 명백한 섹션 오류를 즉시 차단한다.
         is_extra = bool(getattr(card, "is_extra_deck", False))
         if section == "MAIN" and is_extra:
             self.show_snack("Extra Deck 몬스터는 Main Deck에 넣을 수 없습니다.", True)
@@ -94,6 +95,7 @@ class DeckBuilderView:
         self.page.update()
 
     def validate_current_deck(self, e=None) -> bool:
+        # Validate 버튼은 전체 덱 장수와 선택 포맷의 금지 제한까지 검사한다.
         result = self.deck_validation_service.validate(self.flatten_deck(), self.controls.ban_format.value or "TCG")
         self.controls.validation_text.value = "\n".join(result.messages[:10])
         self.controls.validation_text.color = ft.Colors.GREEN_700 if result.ok else ft.Colors.RED_700
@@ -105,6 +107,7 @@ class DeckBuilderView:
         if not name:
             self.show_snack("덱 이름을 입력하세요.", True)
             return
+        # 저장 Service가 같은 검증을 다시 수행하므로 검증을 우회한 저장은 발생하지 않는다.
         try:
             deck_id = self.saved_deck_service.save(
                 SaveDeckRequestDTO(
@@ -129,6 +132,7 @@ class DeckBuilderView:
         self.render_deck()
 
     def fill_sample_deck(self, e=None) -> None:
+        # 시연용 샘플 덱도 DB의 합법 후보 카드만 사용해 구성한다.
         rows = self.deck_builder_service.sample_deck_items(self.controls.ban_format.value or "TCG")
         if not rows:
             self.show_snack("샘플 덱을 만들 카드가 부족합니다.", True)

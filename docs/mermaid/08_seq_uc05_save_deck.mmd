@@ -6,18 +6,15 @@ sequenceDiagram
     autonumber
 
     actor User as 사용자
-    participant FE as Front-end<br/>(DeckBuilderView)
-    participant Ctrl as Controller<br/>(SaveDeckController)
+    participant FE as Flet View<br/>(DeckBuilderView)
     participant Svc as Service<br/>(DefaultSavedDeckService)
     participant Validation as Service<br/>(DefaultDeckValidationService)
-    participant Repo as Repository<br/>(DeckCommandRepository)
+    participant Repo as Repository<br/>(DuckDbDeckCommandRepository)
     participant DB as DB:deck<br/>/ deck_card
 
     User->>FE: 덱 이름, 메모, 포맷 입력 후 저장 요청
     activate FE
-    FE->>Ctrl: save_deck(request)
-    activate Ctrl
-    Ctrl->>Svc: save(request)
+    FE->>Svc: save(request)
     activate Svc
 
     Svc->>Validation: validate(request.items, request.ban_format)
@@ -37,15 +34,12 @@ sequenceDiagram
         Repo-->>Svc: deck_id 반환
         deactivate Repo
 
-        Svc-->>Ctrl: deck_id 반환
-        Ctrl-->>FE: 저장 성공 결과 전달
+        Svc-->>FE: deck_id 반환
         FE-->>User: 저장 완료 메시지 표시
     else [저장 불가]
-        Svc-->>Ctrl: 오류 결과 반환
-        Ctrl-->>FE: 저장 실패 결과 전달
+        Svc-->>FE: ValueError 반환
         FE-->>User: 저장 실패 사유 표시
     end
 
     deactivate Svc
-    deactivate Ctrl
     deactivate FE

@@ -6,7 +6,6 @@ from dataclasses import dataclass, field
 @dataclass(slots=True)
 class CardSetSeedDTO:
     set_name: str
-    release_year: int | None
     set_code: str | None
     set_rarity: str | None
     set_rarity_code: str | None

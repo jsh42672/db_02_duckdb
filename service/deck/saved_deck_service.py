@@ -1,10 +1,17 @@
 from __future__ import annotations
 
 from domain.deck.dto import SavedDeckDetailDTO, SavedDeckSummaryDTO, SaveDeckRequestDTO
+from repository.interfaces import IDeckCommandRepository, IDeckQueryRepository
+from service.deck.validation_service import DefaultDeckValidationService
 
 
 class DefaultSavedDeckService:
-    def __init__(self, command_repository, query_repository, validation_service):
+    def __init__(
+        self,
+        command_repository: IDeckCommandRepository,
+        query_repository: IDeckQueryRepository,
+        validation_service: DefaultDeckValidationService,
+    ):
         self.command_repository = command_repository
         self.query_repository = query_repository
         self.validation_service = validation_service

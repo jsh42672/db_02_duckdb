@@ -26,6 +26,7 @@ class SavedDecksView:
         )
 
     def refresh_decks(self) -> None:
+        # 저장·삭제 이후 같은 메서드를 호출해 목록과 빈 상세 패널을 일관되게 갱신한다.
         decks = self.saved_deck_service.list()
         self.list_panel.set_decks(decks)
         if not decks:
@@ -37,6 +38,7 @@ class SavedDecksView:
         if detail is None:
             self.show_snack("덱을 찾을 수 없습니다.", True)
             return
+        # 저장 시점 이후 규칙이 달라질 수 있으므로 상세 조회 때 현재 규칙으로 다시 검증한다.
         result = self.deck_validation_service.validate(
             [
                 DeckItemDTO(card_id=row.card_id, section=row.section, quantity=row.quantity)
@@ -49,6 +51,7 @@ class SavedDecksView:
         self.page.update()
 
     def ask_delete_deck(self, deck) -> None:
+        # 실제 삭제는 사용자가 확인 대화상자의 삭제 버튼을 눌렀을 때만 수행한다.
         def close_dialog(e=None):
             self.delete_dialog.open = False
             self.page.update()

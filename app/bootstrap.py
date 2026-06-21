@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import duckdb
+
 from app.config import AppConfig, load_config
 from provider.ygoprodeck.provider import YgoProDeckProvider
 from repository.duckdb.card.detail_repository import DuckDbCardDetailRepository
@@ -26,24 +28,24 @@ from service.seed.initialize_service import DefaultInitializeService
 @dataclass(slots=True)
 class AppContainer:
     config: AppConfig
-    connection: object
-    initialize_service: object
-    search_service: object
-    detail_service: object
-    lookup_service: object
-    deck_builder_service: object
-    deck_validation_service: object
-    saved_deck_service: object
+    connection: duckdb.DuckDBPyConnection
+    initialize_service: DefaultInitializeService
+    search_service: DefaultCardSearchService
+    detail_service: DefaultCardDetailService
+    lookup_service: DefaultLookupService
+    deck_builder_service: DefaultDeckBuilderService
+    deck_validation_service: DefaultDeckValidationService
+    saved_deck_service: DefaultSavedDeckService
 
     def close(self) -> None:
-        if hasattr(self.connection, "close"):
-            self.connection.close()
+        self.connection.close()
 
 
 def build_app_container() -> AppContainer:
     config = load_config()
     connection = create_connection(config.db_path)
 
+    # 외부 데이터 공급자와 DuckDB 구현체는 이 조립 지점에서만 직접 생성한다.
     provider = YgoProDeckProvider(config)
 
     card_query_repository = DuckDbCardQueryRepository(connection)
@@ -56,6 +58,7 @@ def build_app_container() -> AppContainer:
     schema_repository = DuckDbSeedSchemaRepository(connection, config.schema_path)
     bulk_insert_repository = DuckDbSeedBulkInsertRepository(connection, meta_repository)
 
+    # Service에는 구체적인 DB 연결 대신 Repository Interface 역할의 객체를 주입한다.
     detail_service = DefaultCardDetailService(card_detail_repository)
     validation_service = DefaultDeckValidationService(deck_validation_repository)
     saved_deck_service = DefaultSavedDeckService(
@@ -73,6 +76,7 @@ def build_app_container() -> AppContainer:
         bulk_insert_repository,
     )
 
+    # View가 필요한 기능만 꺼내 쓸 수 있도록 조립된 객체를 하나의 Container로 반환한다.
     return AppContainer(
         config=config,
         connection=connection,

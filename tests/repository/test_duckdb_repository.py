@@ -34,7 +34,7 @@ def build_seed_cards() -> list[SeedCardDTO]:
             attribute="LIGHT",
             archetype="Test",
             is_extra_deck=False,
-            card_sets=[CardSetSeedDTO("Set A", 2020, "A-001", "Common", "(C)", 0.5)],
+            card_sets=[CardSetSeedDTO("Set A", "A-001", "Common", "(C)", 0.5)],
             card_prices=[CardPriceSeedDTO(0.5, 0.6, 0.7, 0.8, 0.9)],
             card_images=[CardImageSeedDTO(100, "image-100", "image-100-small", "image-100-cropped")],
             ban_statuses=[SeedBanStatusDTO("TCG", "Limited")],
@@ -114,16 +114,29 @@ class TestDuckDbRepository(unittest.TestCase):
                 """
             ).fetchall()
         }
-        self.assertTrue(
+        self.assertEqual(
             {
-                "price_source",
+                "card_type",
+                "attribute",
+                "race",
+                "archetype",
+                "card_set",
                 "rarity",
                 "ban_format",
                 "ban_status_type",
                 "deck_section",
-                "role_tag",
-                "deck_card_role",
-            }.issubset(tables)
+                "price_source",
+                "card",
+                "card_archetype",
+                "card_set_entry",
+                "ban_status",
+                "card_price",
+                "card_image",
+                "deck",
+                "deck_card",
+                "seed_meta",
+            },
+            tables,
         )
 
         card_price_columns = {
@@ -160,7 +173,7 @@ class TestDuckDbRepository(unittest.TestCase):
                 """
             ).fetchall()
         }
-        self.assertIn("release_year", set_columns)
+        self.assertNotIn("release_year", set_columns)
 
     def test_deck_roundtrip_save_list_detail_delete(self) -> None:
         command_repository = DuckDbDeckCommandRepository(self.connection)
@@ -283,7 +296,7 @@ class TestDuckDbRepository(unittest.TestCase):
                         """
                     ).fetchall()
                 }
-                self.assertIn("release_year", set_columns)
+                self.assertNotIn("release_year", set_columns)
                 deck_total = connection.execute("SELECT SUM(quantity) FROM deck_card WHERE deck_id = 1").fetchone()[0]
                 self.assertEqual(2, deck_total)
             finally:

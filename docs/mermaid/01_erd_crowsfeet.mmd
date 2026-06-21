@@ -17,10 +17,6 @@ erDiagram
     DECK ||--o{ DECK_CARD : "contains"
     CARD ||--o{ DECK_CARD : "used_in"
     DECK_SECTION ||--o{ DECK_CARD : "placed_in"
-    DECK ||--o{ DECK_CARD_ROLE : "analyzed_in"
-    CARD ||--o{ DECK_CARD_ROLE : "tagged_in"
-    DECK_SECTION ||--o{ DECK_CARD_ROLE : "scoped_by"
-    ROLE_TAG ||--o{ DECK_CARD_ROLE : "labels"
 
     CARD_TYPE {
         string name PK
@@ -40,7 +36,6 @@ erDiagram
 
     CARD_SET {
         string name PK
-        smallint release_year
     }
 
     RARITY {
@@ -61,10 +56,6 @@ erDiagram
     }
 
     PRICE_SOURCE {
-        string name PK
-    }
-
-    ROLE_TAG {
         string name PK
     }
 
@@ -129,11 +120,4 @@ erDiagram
         bigint card_id PK,FK
         string section PK,FK
         tinyint quantity
-    }
-
-    DECK_CARD_ROLE {
-        bigint deck_id PK,FK
-        bigint card_id PK,FK
-        string section PK,FK
-        string role_name PK,FK
     }

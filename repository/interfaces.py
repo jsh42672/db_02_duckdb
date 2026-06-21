@@ -7,7 +7,7 @@ from domain.deck.dto import DeckItemDTO, SavedDeckDetailDTO, SavedDeckSummaryDTO
 from domain.seed.dto import SeedCardDTO
 
 
-class CardQueryRepository(Protocol):
+class ICardQueryRepository(Protocol):
     def search_cards(self, filters: CardSearchFilterDTO) -> list[CardSummaryDTO]:
         ...
 
@@ -15,12 +15,12 @@ class CardQueryRepository(Protocol):
         ...
 
 
-class CardDetailRepository(Protocol):
+class ICardDetailRepository(Protocol):
     def get_card_detail(self, card_id: int) -> CardDetailDTO | None:
         ...
 
 
-class LookupRepository(Protocol):
+class ILookupRepository(Protocol):
     def get_lookup_options(self) -> LookupOptionsDTO:
         ...
 
@@ -28,7 +28,7 @@ class LookupRepository(Protocol):
         ...
 
 
-class DeckCommandRepository(Protocol):
+class IDeckCommandRepository(Protocol):
     def save_deck(self, name: str, memo: str, ban_format: str, items: list[DeckItemDTO]) -> int:
         ...
 
@@ -36,7 +36,7 @@ class DeckCommandRepository(Protocol):
         ...
 
 
-class DeckQueryRepository(Protocol):
+class IDeckQueryRepository(Protocol):
     def list_decks(self) -> list[SavedDeckSummaryDTO]:
         ...
 
@@ -47,7 +47,7 @@ class DeckQueryRepository(Protocol):
         ...
 
 
-class DeckValidationRepository(Protocol):
+class IDeckValidationRepository(Protocol):
     def get_validation_card_map(self, card_ids: list[int]) -> dict[int, dict[str, object]]:
         ...
 
@@ -58,7 +58,7 @@ class DeckValidationRepository(Protocol):
         ...
 
 
-class SeedSchemaRepository(Protocol):
+class ISeedSchemaRepository(Protocol):
     def apply_schema(self) -> None:
         ...
 
@@ -66,7 +66,7 @@ class SeedSchemaRepository(Protocol):
         ...
 
 
-class SeedMetaRepository(Protocol):
+class ISeedMetaRepository(Protocol):
     def get_meta_value(self, key: str) -> str | None:
         ...
 
@@ -74,6 +74,6 @@ class SeedMetaRepository(Protocol):
         ...
 
 
-class SeedBulkInsertRepository(Protocol):
+class ISeedBulkInsertRepository(Protocol):
     def seed_cards(self, cards: list[SeedCardDTO], source: str) -> None:
         ...

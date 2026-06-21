@@ -6,12 +6,14 @@ from views.common.dialogs import build_delete_dialog, show_snack
 
 
 def main(page: ft.Page):
+    # 데스크톱 실행 환경과 기본 창 크기를 먼저 고정해 세 화면의 배치를 일관되게 유지한다.
     page.title = "YGO Deck Lab"
     page.padding = 16
     page.window.width = 1180
     page.window.height = 760
     page.theme_mode = ft.ThemeMode.LIGHT
 
+    # Bootstrap에서 DuckDB Repository와 Service를 조립한 뒤 View에는 Service만 전달한다.
     container = build_app_container()
 
     loading = ft.Column(
@@ -26,6 +28,7 @@ def main(page: ft.Page):
     page.add(loading)
     page.update()
 
+    # 스키마 적용과 카드 시딩이 끝날 때까지 로딩 화면을 유지한다.
     summary = container.initialize_service.initialize()
     page.clean()
 
@@ -84,6 +87,7 @@ def main(page: ft.Page):
     view_host = ft.Container(content=search_view.control, expand=True)
 
     def show_view(view_name: str) -> None:
+        # Flet의 단일 Page 안에서 View의 루트 Control만 교체한다.
         if view_name == "search":
             view_host.content = search_view.control
         elif view_name == "deck":
